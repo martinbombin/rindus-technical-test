@@ -1,0 +1,1 @@
+# rindus-technical-test
