@@ -1,0 +1,96 @@
+"""User router module for managing user-related API endpoints.
+
+This module defines routes for creating users, retrieving multiple users,
+and fetching a specific user by ID. It utilizes FastAPI and depends on
+external service and schema layers for business logic and validation.
+"""
+
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query
+
+from app import dependencies, exceptions
+from app.schemas import user as user_schemas
+from app.services import user as user_service
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.post("/", response_model=user_schemas.UserPublic)
+def create_user(
+    user: user_schemas.UserCreate,
+    session: dependencies.SessionDep,
+):
+    """Create a new user account.
+
+    Args:
+        user (user_schemas.UserCreate): The user creation data.
+        session (Session): The database session dependency.
+
+    Raises:
+        HTTPException: If the email is already registered.
+
+    Returns:
+        user_schemas.UserPublic: The created user's public data.
+
+    """
+    try:
+        created_user = user_service.create_user_in_db(session, user)
+    except exceptions.ExistingEmailError:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered",
+        ) from None
+    return created_user
+
+
+@router.get("/", response_model=list[user_schemas.UserPublic])
+def read_users(
+    session: dependencies.SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+    username: str | None = None,
+    email: str | None = None,
+):
+    """Retrieve a list of users with optional filters.
+
+    Args:
+        session (Session): The database session dependency.
+        offset (int): Pagination offset. Default is 0.
+        limit (int): Pagination limit. Maximum is 100. Default is 100.
+        username (str | None): Optional username filter.
+        email (str | None): Optional email filter.
+
+    Returns:
+        list[user_schemas.UserPublic]: A list of public user data.
+
+    """
+    return user_service.get_users_from_db(
+        session,
+        offset,
+        limit,
+        username,
+        email,
+    )
+
+
+@router.get("/{user_id}", response_model=user_schemas.UserPublic)
+def read_user(user_id: uuid.UUID, session: dependencies.SessionDep):
+    """Retrieve a single user by their unique ID.
+
+    Args:
+        user_id (uuid.UUID): The UUID of the user to retrieve.
+        session (Session): The database session dependency.
+
+    Raises:
+        HTTPException: If no user is found with the given ID.
+
+    Returns:
+        user_schemas.UserPublic: The requested user's public data.
+
+    """
+    user = user_service.get_user_by_id(session, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
