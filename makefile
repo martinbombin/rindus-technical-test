@@ -7,26 +7,26 @@ push:
 
 # Docker Compose
 up:
-	env -i docker-compose --env-file .env -f docker-compose.yml up --build
+	sh -c 'export $$(grep -v "^#" .env | xargs) && docker compose -f docker-compose.yml up --build'
 
 mysql:
-	env -i docker-compose --env-file .env -f docker-compose.yml up --build mysql
+	sh -c 'export $$(grep -v "^#" .env | xargs) && docker compose -f docker-compose.yml up --build mysql'
 
 down:
-	docker-compose down --volumes --remove-orphans
+	docker compose down --volumes --remove-orphans
 
 prune:
 	docker system prune -f
 
 # Tests
 test:
-	env -i docker-compose --env-file .env.test -f docker-compose.test.yml up --build
+	sh -c 'export $$(grep -v "^#" .env.test | xargs) && docker compose -f docker-compose.test.yml up --build'
 
 test-mysql:
-	env -i docker-compose --env-file .env.test -f docker-compose.test.yml up --build mysql_integration_tests
+	sh -c 'export $$(grep -v "^#" .env.test | xargs) && docker compose -f docker-compose.test.yml up --build mysql_integration_tests'
 
 pytest:
-	export $(grep -v '^#' .env.test | xargs) && pytest
+	sh -c 'export $$(grep -v "^#" .env.test | xargs) && pytest -v'
 
 # Kubernetes
 kube-apply:
