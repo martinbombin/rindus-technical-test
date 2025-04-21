@@ -90,7 +90,7 @@ FastAPI automatically provides interactive documentation:
 
 ## 🧱 Project Structure
 
-.
+<pre><code>.
 ├── app/
 │   ├── main.py              # FastAPI app entrypoint
 │   ├── models.py            # SQLAlchemy models
@@ -108,3 +108,4 @@ FastAPI automatically provides interactive documentation:
 ├── docker-compose.test.yml
 ├── pyproject.toml
 └── README.md
+</code></pre>
