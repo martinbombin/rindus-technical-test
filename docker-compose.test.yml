@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: Dockerfile_test
     container_name: pytest_runner
-    entrypoint: ["bash", "-c", "sleep 10 && pytest"]
+    entrypoint: ["bash", "-c", "sleep 10 && pytest -v"]
     depends_on:
       mysql_integration_tests:
         condition: service_healthy
