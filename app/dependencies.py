@@ -1,11 +1,12 @@
-"""Dependency injection utilities for FastAPI endpoints.
+"""Dependency injection utilities for application services and database sessions.
 
-This module defines reusable dependencies, such as a SQLAlchemy session,
-which can be injected into route handlers or services using FastAPI's `Depends`.
+This module defines reusable FastAPI dependency functions to provide database
+sessions and service instances to route handlers.
 
-It provides:
-- `get_session`: A generator-based dependency that yields a database session.
-- `SessionDep`: A type alias for cleaner injection of SQLAlchemy sessions.
+Key components:
+- `get_session`: Yields a SQLAlchemy session tied to the app lifecycle.
+- `get_user_service`: Provides a fully initialized UserService instance.
+- `UserServiceDep`: Typed annotation for injecting UserService as a dependency.
 """
 
 from typing import Annotated
@@ -13,29 +14,45 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
+from app.repositories.user import UserRepository
+from app.services.user import UserService
+
 
 def get_session(request: Request):
-    """Dependency that provides a scoped SQLAlchemy session.
-
-    Opens a new session using the application's configured DB engine and ensures
-    it's properly closed after the request is handled.
+    """Provide a SQLAlchemy session tied to the current request lifecycle.
 
     Args:
-        request (Request): The current FastAPI request, used to access app state.
+        request (Request): The incoming FastAPI request object.
 
     Yields:
-        Session: A SQLAlchemy database session instance.
+        Session: A SQLAlchemy session instance.
+
+    This function ensures the session is properly closed after the request.
 
     """
-    with Session(request.app.state.db_engine) as session:
+    SessionLocal = request.app.state.SessionLocal
+    session = SessionLocal()
+    try:
         yield session
+    finally:
+        session.close()
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
-"""
-Type alias for injecting a SQLAlchemy session using FastAPI's dependency system.
+def get_user_service(
+    session: Session = Depends(get_session),
+) -> UserService:
+    """Provide a UserService instance with an attached repository.
 
-Usage:
-    def endpoint(session: SessionDep):
-        ...
-"""
+    Args:
+        session (Session): Injected SQLAlchemy session.
+
+    Returns:
+        UserService: A fully initialized user service.
+
+    """
+    repo = UserRepository(session)
+    return UserService(repo)
+
+
+# Annotated type alias for injecting the user service
+UserServiceDep = Annotated[UserService, Depends(get_user_service)]

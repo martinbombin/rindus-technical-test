@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import Engine
 from sqlalchemy.engine import URL, create_engine
+from sqlalchemy.orm import sessionmaker
 
 from app import config, models
 from app.routers import user as users_router
@@ -33,8 +34,9 @@ def create_db_and_tables(engine: Engine) -> None:
 async def lifespan(app: FastAPI):
     """FastAPI lifespan context manager to set up and tear down application resources.
 
-    This function initializes the SQLAlchemy engine using environment configuration
-    and attaches it to the FastAPI app's state. Tables are created on startup.
+    Initializes the SQLAlchemy engine and session factory,
+    attaches them to the FastAPI app state, and ensures database
+    tables are created before serving requests.
 
     Args:
         app (FastAPI): The FastAPI application instance.
@@ -51,10 +53,18 @@ async def lifespan(app: FastAPI):
         port=config.settings.db_port,
         database=config.settings.db_name,
     )
+
     engine = create_engine(url_object, echo=True)
+    SessionLocal = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+
+    app.state.db_engine = engine
+    app.state.SessionLocal = SessionLocal
 
     create_db_and_tables(engine=engine)
-    app.state.db_engine = engine
     yield
 
 
