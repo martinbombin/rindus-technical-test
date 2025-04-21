@@ -1,9 +1,9 @@
 # Build & Push Docker Image
 build:
-	docker build -t martinbombin/rindus-technical-test:0.1.0 . -f Dockerfile
+	docker build -t martinbombin/rindus-technical-test:0.2.0 . -f Dockerfile
 
 push:
-	docker push martinbombin/rindus-technical-test:0.1.0
+	docker push martinbombin/rindus-technical-test:0.2.0
 
 # Docker Compose
 up:

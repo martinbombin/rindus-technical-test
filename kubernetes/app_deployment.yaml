@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: martinbombin/rindus-technical-test:0.1.0
+          image: martinbombin/rindus-technical-test:0.2.0
           ports:
             - containerPort: 80
           env:
