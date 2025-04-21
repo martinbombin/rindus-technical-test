@@ -30,11 +30,7 @@ pytest:
 
 # Kubernetes
 kube-apply:
-	kubectl apply -f kubernetes/secret.yaml
-	kubectl apply -f kubernetes/configmap.yaml
-	kubectl apply -f kubernetes/pvc.yaml
-	kubectl apply -f kubernetes/mysql_deployment.yaml
-	kubectl apply -f kubernetes/app_deployment.yaml
+	kubectl apply -f kubernetes/
 
 kube-forward:
 	kubectl port-forward service/app 8000:80
