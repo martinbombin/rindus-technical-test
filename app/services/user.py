@@ -3,13 +3,16 @@
 This module acts as a bridge between the API layer and the repository layer,
 handling application-specific concerns like checking for existing users or
 transforming schema data into model instances.
+
+Key components:
+- `UserService`: Class encapsulating user-related operations.
 """
 
 import uuid
 
 from passlib.context import CryptContext
 
-from app import dependencies, exceptions, models
+from app import exceptions, models
 from app.repositories.user import UserRepository
 from app.schemas import user as schemas_user
 
@@ -29,79 +32,82 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_user_in_db(
-    session: dependencies.SessionDep,
-    user_create: schemas_user.UserCreate,
-) -> models.User:
-    """Create a new user in the database after validating uniqueness.
+class UserService:
+    """Service class responsible for user-related business logic."""
 
-    Args:
-        session (SessionDep): The SQLAlchemy session dependency.
-        user_create (UserCreate): The user creation schema with input data.
+    def __init__(self, user_repo: UserRepository) -> None:
+        """Initialize the UserService.
 
-    Raises:
-        ExistingEmailError: If a user with the same email already exists.
+        Args:
+            user_repo (UserRepository): The user repository instance used for database operations.
 
-    Returns:
-        models.User: The newly created User ORM model.
+        """
+        self.user_repo = user_repo
 
-    """
-    repo = UserRepository(session)
+    def create_user_in_db(
+        self,
+        user_create: schemas_user.UserCreate,
+    ) -> models.User:
+        """Create a new user in the database after validating uniqueness.
 
-    if repo.user_exists(user_create.email):
-        raise exceptions.ExistingEmailError
+        Args:
+            user_create (UserCreate): The user creation schema with input data.
 
-    hashed_password = hash_password(
-        user_create.password,
-    )
-    user_create.password = hashed_password
-    user = models.User(**user_create.model_dump())
+        Raises:
+            ExistingEmailError: If a user with the same email already exists.
 
-    return repo.create_user(user)
+        Returns:
+            models.User: The newly created User ORM model.
 
+        """
+        if self.user_repo.user_exists(user_create.email):
+            raise exceptions.ExistingEmailError
 
-def get_users_from_db(
-    session: dependencies.SessionDep,
-    offset: int = 0,
-    limit: int = 100,
-    username: str | None = None,
-    email: str | None = None,
-) -> list[models.User]:
-    """Retrieve a list of users from the database with optional filters.
+        hashed_password = hash_password(
+            user_create.password,
+        )
+        user_create.password = hashed_password
+        user = models.User(**user_create.model_dump())
 
-    Args:
-        session (SessionDep): The SQLAlchemy session dependency.
-        offset (int): Pagination offset. Default is 0.
-        limit (int): Maximum number of users to return. Default is 100.
-        username (str | None): Optional filter by username.
-        email (str | None): Optional filter by email.
+        return self.user_repo.create_user(user)
 
-    Returns:
-        list[models.User]: A list of User ORM models matching the query.
+    def get_users_from_db(
+        self,
+        offset: int = 0,
+        limit: int = 100,
+        username: str | None = None,
+        email: str | None = None,
+    ) -> list[models.User]:
+        """Retrieve a list of users from the database with optional filters.
 
-    """
-    repo = UserRepository(session)
-    return repo.get_users(
-        offset=offset,
-        limit=limit,
-        username=username,
-        email=email,
-    )
+        Args:
+            offset (int): Pagination offset. Default is 0.
+            limit (int): Maximum number of users to return. Default is 100.
+            username (str | None): Optional filter by username.
+            email (str | None): Optional filter by email.
 
+        Returns:
+            list[models.User]: A list of User ORM models matching the query.
 
-def get_user_by_id(
-    session: dependencies.SessionDep,
-    user_id: uuid.UUID,
-) -> models.User | None:
-    """Retrieve a single user by their UUID.
+        """
+        return self.user_repo.get_users(
+            offset=offset,
+            limit=limit,
+            username=username,
+            email=email,
+        )
 
-    Args:
-        session (SessionDep): The SQLAlchemy session dependency.
-        user_id (uuid.UUID): The unique identifier of the user.
+    def get_user_by_id(
+        self,
+        user_id: uuid.UUID,
+    ) -> models.User | None:
+        """Retrieve a single user by their UUID.
 
-    Returns:
-        models.User | None: The user object if found, or None if not found.
+        Args:
+            user_id (uuid.UUID): The unique identifier of the user.
 
-    """
-    repo = UserRepository(session)
-    return repo.get_user_by_id(user_id)
+        Returns:
+            models.User | None: The user object if found, or None if not found.
+
+        """
+        return self.user_repo.get_user_by_id(user_id)

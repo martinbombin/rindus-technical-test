@@ -12,7 +12,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app import dependencies, exceptions
 from app.schemas import user as user_schemas
-from app.services import user as user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -20,23 +19,23 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.post("/", response_model=user_schemas.UserPublic)
 def create_user(
     user: user_schemas.UserCreate,
-    session: dependencies.SessionDep,
+    user_service: dependencies.UserServiceDep,
 ):
     """Create a new user account.
 
     Args:
         user (user_schemas.UserCreate): The user creation data.
-        session (Session): The database session dependency.
+        user_service (UserService): The injected user service.
 
     Raises:
-        HTTPException: If the email is already registered.
+        HTTPException: If a user with the provided email already exists.
 
     Returns:
         user_schemas.UserPublic: The created user's public data.
 
     """
     try:
-        created_user = user_service.create_user_in_db(session, user)
+        created_user = user_service.create_user_in_db(user)
     except exceptions.ExistingEmailError:
         raise HTTPException(
             status_code=400,
@@ -47,7 +46,7 @@ def create_user(
 
 @router.get("/", response_model=list[user_schemas.UserPublic])
 def read_users(
-    session: dependencies.SessionDep,
+    user_service: dependencies.UserServiceDep,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
     username: str | None = None,
@@ -56,7 +55,7 @@ def read_users(
     """Retrieve a list of users with optional filters.
 
     Args:
-        session (Session): The database session dependency.
+        user_service (UserService): The injected user service.
         offset (int): Pagination offset. Default is 0.
         limit (int): Pagination limit. Maximum is 100. Default is 100.
         username (str | None): Optional username filter.
@@ -67,7 +66,6 @@ def read_users(
 
     """
     return user_service.get_users_from_db(
-        session,
         offset,
         limit,
         username,
@@ -76,12 +74,15 @@ def read_users(
 
 
 @router.get("/{user_id}", response_model=user_schemas.UserPublic)
-def read_user(user_id: uuid.UUID, session: dependencies.SessionDep):
+def read_user(
+    user_id: uuid.UUID,
+    user_service: dependencies.UserServiceDep,
+):
     """Retrieve a single user by their unique ID.
 
     Args:
         user_id (uuid.UUID): The UUID of the user to retrieve.
-        session (Session): The database session dependency.
+        user_service (UserService): The injected user service.
 
     Raises:
         HTTPException: If no user is found with the given ID.
@@ -90,7 +91,7 @@ def read_user(user_id: uuid.UUID, session: dependencies.SessionDep):
         user_schemas.UserPublic: The requested user's public data.
 
     """
-    user = user_service.get_user_by_id(session, user_id)
+    user = user_service.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
