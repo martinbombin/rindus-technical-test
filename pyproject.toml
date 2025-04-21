@@ -14,7 +14,7 @@ dependencies = [
     "python-dotenv (>=1.1.0,<2.0.0)",
     "sqlalchemy (>=2.0.40,<3.0.0)",
     "passlib[bcrypt] (>=1.7.4,<2.0.0)",
-    "mysqlclient (>=2.2.7,<3.0.0)"
+    "mysqlclient (>=2.2.7,<3.0.0)",
 ]
 
 
@@ -56,3 +56,9 @@ line-length = 72
 
 [tool.ruff.lint]
 select = ["ALL"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test"
+]
