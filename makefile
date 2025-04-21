@@ -1,16 +1,21 @@
-# Build & Push Docker Image
+# Variables
+DOCKER_IMAGE=martinbombin/rindus-technical-test:0.2.1
+ENV_CMD=grep -v '^\#' .env | xargs
+ENV_TEST_CMD=grep -v '^\#' .env.test | xargs
+
+# Docker Build & Push
 build:
-	docker build -t martinbombin/rindus-technical-test:0.2.0 . -f Dockerfile
+	docker build -t $(DOCKER_IMAGE) . -f Dockerfile
 
 push:
-	docker push martinbombin/rindus-technical-test:0.2.0
+	docker push $(DOCKER_IMAGE)
 
 # Docker Compose
 up:
-	sh -c 'export $$(grep -v "^#" .env | xargs) && docker compose -f docker-compose.yml up --build'
+	sh -c "$$( $(ENV_CMD) ) docker compose -f docker-compose.yml up --build"
 
 mysql:
-	sh -c 'export $$(grep -v "^#" .env | xargs) && docker compose -f docker-compose.yml up --build mysql'
+	sh -c "$$( $(ENV_CMD) ) docker compose -f docker-compose.yml up --build mysql"
 
 down:
 	docker compose down --volumes --remove-orphans
@@ -20,13 +25,13 @@ prune:
 
 # Tests
 test:
-	sh -c 'export $$(grep -v "^#" .env.test | xargs) && docker compose -f docker-compose.test.yml up --build'
+	sh -c "$$( $(ENV_TEST_CMD) ) docker compose -f docker-compose.test.yml up --build"
 
 test-mysql:
-	sh -c 'export $$(grep -v "^#" .env.test | xargs) && docker compose -f docker-compose.test.yml up --build mysql_integration_tests'
+	sh -c "$$( $(ENV_TEST_CMD) ) docker compose -f docker-compose.test.yml up --build mysql_integration_tests"
 
 pytest:
-	sh -c 'export $$(grep -v "^#" .env.test | xargs) && pytest -v'
+	sh -c "$$( $(ENV_TEST_CMD) ) pytest -v"
 
 # Kubernetes
 kube-apply:
