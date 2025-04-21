@@ -5,8 +5,6 @@ configuration values such as database connection details. Environment variables
 are read from a `.env` file using `pydantic-settings`.
 """
 
-import os
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,10 +31,7 @@ class Settings(BaseSettings):
     db_host: str
     db_port: int
 
-    model_config = SettingsConfigDict(
-        env_file=os.getenv("ENV_FILE", ".env"),
-        extra="ignore",
-    )
+    model_config = SettingsConfigDict(extra="ignore")
 
 
 settings = Settings()  # type: ignore
